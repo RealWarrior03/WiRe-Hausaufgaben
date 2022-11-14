@@ -1,7 +1,8 @@
 
 import numpy as np
 import unittest
-from main import rotation_matrix, matrix_multiplication, compare_multiplication, inverse_rotation
+from main import rotation_matrix, matrix_multiplication, compare_multiplication, inverse_rotation, machine_epsilon
+
 
 class Tests(unittest.TestCase):
 
@@ -19,7 +20,7 @@ class Tests(unittest.TestCase):
     def test_machine_epsilon(self):
         pass
         # TODO
-        
+
     def test_is_close(self):
         pass
         # TODO

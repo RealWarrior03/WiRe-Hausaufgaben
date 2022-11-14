@@ -39,7 +39,7 @@ def matrix_multiplication(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     for i in range(n):
         for j in range(p):
             for k in range(m_a):
-                c[i][k] += a[i][j] * b[j][k]
+                c[i][j] += a[i][k] * b[k][j]
 
     return c
 
@@ -114,7 +114,7 @@ def machine_epsilon(fp_format: np.dtype) -> np.number:
     """
 
     # TODO: create epsilon element with correct initial value and data format fp_format
-    eps = fp_format.type(0.0)
+    eps = fp_format.type(1.0)
 
     # Create necessary variables for iteration
     one = fp_format.type(1.0)
@@ -125,6 +125,9 @@ def machine_epsilon(fp_format: np.dtype) -> np.number:
     print('  ----------------------------------------')
 
     # TODO: determine machine precision without the use of numpy.finfo()
+    while eps+one > one:
+        eps = eps/two
+    eps = eps*two
 
     print('{0:4.0f} |  {1:16.8e}   | equal 1'.format(i, eps))
     return eps
@@ -152,10 +155,19 @@ def close(A: np.ndarray, B: np.ndarray, eps: np.number = 1e-08) -> bool:
     """
     isclose = False
     # TODO: check if a and b are compareable
+    if A.shape != B.shape:
+        raise ValueError("A and B are not compareable!")
 
     # TODO: check if all entries in a are close to the corresponding entry in b
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            temp = A[i][j] - B[i][j]
+            if temp < 0.0:
+                temp = temp*(-1)
+            if temp > eps:
+                return isclose
 
-    return isclose
+    return True
 
 
 def rotation_matrix(theta: float) -> np.ndarray:
@@ -179,10 +191,15 @@ def rotation_matrix(theta: float) -> np.ndarray:
     r = np.zeros((2, 2))
 
     # TODO: convert angle to radians
+    rad = np.deg2rad(theta)
 
     # TODO: calculate diagonal terms of matrix
+    r[0][0] = np.cos(rad)
+    r[1][1] = np.cos(rad)
 
     # TODO: off-diagonal terms of matrix
+    r[0][1] = np.sin(rad)*(-1)
+    r[1][0] = np.sin(rad)
 
     return r
 
@@ -204,6 +221,10 @@ def inverse_rotation(theta: float) -> np.ndarray:
     # TODO: compute inverse rotation matrix
 
     m = np.zeros((2, 2))
+
+    r = rotation_matrix(theta)
+    m[0][0], m[1][1] = r[0][0], r[1][1]
+    m[1][0], m[0][1] = r[0][1], r[1][0]
 
     return m
 
