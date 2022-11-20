@@ -43,9 +43,6 @@ def gaussian_elimination(A: np.ndarray, b: np.ndarray, use_pivoting: bool = True
     # TODO: Perform gaussian elimination
     if use_pivoting:
         print("pivoting not implemented yet")
-        for i in range(A.shape[0]):
-
-
     else:
         for i in range(A.shape[0]-1):
             for r in range(i+1, A.shape[0]):
@@ -85,15 +82,15 @@ def back_substitution(A: np.ndarray, b: np.ndarray) -> np.ndarray:
         raise ValueError("Matrix and vector aren't compatible!")
 
     # TODO: Initialize solution vector with proper size
-    x = np.zeros(1)
+    x = np.zeros(b.shape[0])
 
     # TODO: Run backsubstitution and fill solution vector, raise ValueError if no/infinite solutions exist
-    for i in range(x.shape[0]):
+    for i in range(x.shape[0]-1, -1, -1):
         temp = 0
         for k in range(i+1, x.shape[0]):
             temp += A[i][k] * x[k]
         if np.isclose(A[i][i], 0):
-            raise ValueError("Dividing by zero")
+            raise ValueError("no/infinite solution(s) exist..")
         else:
             x[i] = 1/A[i][i] * (b[i] - temp)
 
@@ -173,7 +170,14 @@ def solve_cholesky(L: np.ndarray, b: np.ndarray) -> np.ndarray:
 
     # TODO Check the input for validity, raising a ValueError if this is not the case
     (n, m) = L.shape
-
+    if n != m:
+        raise ValueError("L is not square")
+    if n != b.shape[0]:
+        raise ValueError("Matrix and vector aren't compatible")
+    for r in range(n):
+        for i in range(r+1, m):
+            if not np.isclose(L[r][i], 0):
+                raise ValueError("Matrix is not a lower triangular matrix")
 
     # TODO Solve the system by forward- and backsubstitution
     x = np.zeros(m)
