@@ -33,10 +33,24 @@ def gaussian_elimination(A: np.ndarray, b: np.ndarray, use_pivoting: bool = True
     b = b.copy()
 
     # TODO: Test if shape of matrix and vector is compatible and raise ValueError if not
-    if (A.shape[0] != b.shape[1]):
+    print(A)
+    print(b)
+    if A.shape[0] != b.shape[0]:
         raise ValueError("Matrix and vector aren't compatible!")
 
     # TODO: Perform gaussian elimination
+    if use_pivoting:
+        print("pivoting not implemented yet")
+    else:
+        for i in range(A.shape[0]):
+            for j in range(i+1, A.shape[0]):
+                if np.isclose(A[i][i], 0):
+                    raise ValueError("Dividing by zero, pivoting is necessary")
+                else:
+                    A[j][i] = A[j][i] / A[i][i]
+                    b[j] = b[j] / b[i]
+                for k in range(i+1, A.shape[0]):
+                    A[j][k] = A[j][k] - A[j][i] * A[i][k]
 
     return A, b
 
