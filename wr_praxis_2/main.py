@@ -37,20 +37,24 @@ def gaussian_elimination(A: np.ndarray, b: np.ndarray, use_pivoting: bool = True
     print(b)
     if A.shape[0] != b.shape[0]:
         raise ValueError("Matrix and vector aren't compatible!")
+    if A.shape[0] != A.shape[1]:
+        raise ValueError("Matrix is not square")
 
     # TODO: Perform gaussian elimination
     if use_pivoting:
         print("pivoting not implemented yet")
-    else:
         for i in range(A.shape[0]):
-            for j in range(i+1, A.shape[0]):
+
+
+    else:
+        for i in range(A.shape[0]-1):
+            for r in range(i+1, A.shape[0]):
                 if np.isclose(A[i][i], 0):
-                    raise ValueError("Dividing by zero, pivoting is necessary")
+                    raise ValueError("Dividing by zero")
                 else:
-                    A[j][i] = A[j][i] / A[i][i]
-                    b[j] = b[j] / b[i]
-                for k in range(i+1, A.shape[0]):
-                    A[j][k] = A[j][k] - A[j][i] * A[i][k]
+                    A[r][i] = A[r][i] / A[i][i]
+                for c in range(i+1, A.shape[0]):
+                    A[r][c] = A[r][c] - A[r][i] * A[i][c]
 
     return A, b
 
@@ -77,11 +81,21 @@ def back_substitution(A: np.ndarray, b: np.ndarray) -> np.ndarray:
     """
 
     # TODO: Test if shape of matrix and vector is compatible and raise ValueError if not
+    if A.shape[0] != b.shape[0]:
+        raise ValueError("Matrix and vector aren't compatible!")
 
     # TODO: Initialize solution vector with proper size
     x = np.zeros(1)
 
     # TODO: Run backsubstitution and fill solution vector, raise ValueError if no/infinite solutions exist
+    for i in range(x.shape[0]):
+        temp = 0
+        for k in range(i+1, x.shape[0]):
+            temp += A[i][k] * x[k]
+        if np.isclose(A[i][i], 0):
+            raise ValueError("Dividing by zero")
+        else:
+            x[i] = 1/A[i][i] * (b[i] - temp)
 
     return x
 
@@ -109,11 +123,30 @@ def compute_cholesky(M: np.ndarray) -> np.ndarray:
     # TODO check for symmetry and raise an exception of type ValueError
     (n, m) = M.shape
 
+    for i in range(n):
+        for j in range(m):
+            if M[i][j] != [j][i]:
+                raise ValueError("Matrix isn't symmetric!")
 
 
     # TODO build the factorization and raise a ValueError in case of a non-positive definite input matrix
-
     L = np.zeros((n, n))
+
+    for i in range(n):
+        for j in range(n):
+            temp = 0
+            if i == j:
+                for k in range(i-2):
+                    temp = temp + L[i][k] * L[i][k]
+                temp = M[i][i] - temp
+                temp = np.sqrt(temp)
+                L[i][j] = temp
+            else:
+                for k in range(j-1):
+                    temp = temp + L[i][k] * L[j][k]
+                temp = M[i][j] - temp
+                temp = 1/L[j][j] * temp
+                L[i][i] = temp
 
 
     return L
