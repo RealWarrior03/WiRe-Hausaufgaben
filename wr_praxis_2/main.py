@@ -1,4 +1,3 @@
-
 import numpy as np
 import tomograph
 
@@ -33,25 +32,32 @@ def gaussian_elimination(A: np.ndarray, b: np.ndarray, use_pivoting: bool = True
     b = b.copy()
 
     # TODO: Test if shape of matrix and vector is compatible and raise ValueError if not
-    print(A)
-    print(b)
     if A.shape[0] != b.shape[0]:
         raise ValueError("Matrix and vector aren't compatible!")
     if A.shape[0] != A.shape[1]:
         raise ValueError("Matrix is not square")
 
     # TODO: Perform gaussian elimination
-    if use_pivoting:
-        print("pivoting not implemented yet")
-    else:
-        for i in range(A.shape[0]-1):
-            for r in range(i+1, A.shape[0]):
-                if np.isclose(A[i][i], 0):
-                    raise ValueError("Dividing by zero")
-                else:
-                    A[r][i] = A[r][i] / A[i][i]
-                for c in range(i+1, A.shape[0]):
-                    A[r][c] = A[r][c] - A[r][i] * A[i][c]
+    for i in range(A.shape[0] - 1):
+        if use_pivoting:
+            gl = A[i][i]
+            gl_i = i
+            for s in range(i, A.shape[0]):
+                cur = np.absolute(A[s][i])
+                if cur > gl:
+                    gl = cur
+                    gl_i = s
+            for t in range(A.shape[0]):
+                A[gl_i][t], A[i][t] = A[i][t], A[gl_i][t]
+            b[gl_i], b[i] = b[i], b[gl_i]
+        for j in range(i + 1, A.shape[0]):
+            if np.isclose(A[i][i], 0):
+                raise ValueError("Dividing by zero in A!")
+            else:
+                temp = (A[j][i] / A[i][i])
+                for t in range(i, A.shape[0]):
+                    A[j][t] -= A[i][t] * temp
+                b[j] -= b[i] * temp
 
     return A, b
 
@@ -85,14 +91,18 @@ def back_substitution(A: np.ndarray, b: np.ndarray) -> np.ndarray:
     x = np.zeros(b.shape[0])
 
     # TODO: Run backsubstitution and fill solution vector, raise ValueError if no/infinite solutions exist
-    for i in range(x.shape[0]-1, -1, -1):
+    A_copy, b_copy = gaussian_elimination(A, b, True)
+    print(A_copy)
+    print(np.isclose(A_copy[2][0], 0))
+    print(b_copy)
+    for i in range(x.shape[0] - 1, -1, -1):
         temp = 0
-        for k in range(i+1, x.shape[0]):
-            temp += A[i][k] * x[k]
-        if np.isclose(A[i][i], 0):
+        for j in range(i + 1, x.shape[0]):
+            temp += A_copy[i][j] * x[j]
+        if np.isclose(A_copy[i][i], 0):
             raise ValueError("no/infinite solution(s) exist..")
         else:
-            x[i] = 1/A[i][i] * (b[i] - temp)
+            x[i] = 1 / A_copy[i][i] * (b_copy[i] - temp)
 
     return x
 
@@ -120,31 +130,37 @@ def compute_cholesky(M: np.ndarray) -> np.ndarray:
     # TODO check for symmetry and raise an exception of type ValueError
     (n, m) = M.shape
 
+    if n != m:
+        raise ValueError("Matrix isn't square!")
     for i in range(n):
         for j in range(m):
-            if M[i][j] != [j][i]:
+            if not np.isclose(M[i][j], M[j][i]):
                 raise ValueError("Matrix isn't symmetric!")
-
 
     # TODO build the factorization and raise a ValueError in case of a non-positive definite input matrix
     L = np.zeros((n, n))
 
     for i in range(n):
-        for j in range(n):
+        for j in range(i+1):
             temp = 0
             if i == j:
-                for k in range(i-2):
-                    temp = temp + L[i][k] * L[i][k]
+                for k in range(i):
+                    temp += L[i][k] * L[i][k]
                 temp = M[i][i] - temp
+                if temp < 0:  # negative square root
+                    raise ValueError("Matrix is not psd! (negative square root)")
                 temp = np.sqrt(temp)
-                L[i][j] = temp
+                if np.isclose(temp, 0):  # square root is close to 0
+                    raise ValueError("Matrix is not psd! (square root is zero)")
+                L[i][i] = temp
             else:
-                for k in range(j-1):
+                for k in range(j):
                     temp = temp + L[i][k] * L[j][k]
                 temp = M[i][j] - temp
-                temp = 1/L[j][j] * temp
-                L[i][i] = temp
-
+                if np.isclose(L[j][j], 0):  # dividing by zero
+                    raise ValueError("Matrix is not psd! (dividing by zero)")
+                temp = 1 / L[j][j] * temp
+                L[i][j] = temp
 
     return L
 
@@ -175,13 +191,16 @@ def solve_cholesky(L: np.ndarray, b: np.ndarray) -> np.ndarray:
     if n != b.shape[0]:
         raise ValueError("Matrix and vector aren't compatible")
     for r in range(n):
-        for i in range(r+1, m):
+        for i in range(r + 1, m):
             if not np.isclose(L[r][i], 0):
                 raise ValueError("Matrix is not a lower triangular matrix")
 
     # TODO Solve the system by forward- and backsubstitution
     x = np.zeros(m)
+    L_T = np.transpose(L)
+    A = np.matmul(L, L_T)
 
+    x = back_substitution(A, b)
 
     return x
 
@@ -226,7 +245,6 @@ def setup_system_tomograph(n_shots: np.int64, n_rays: np.int64, n_grid: np.int64
     # lengths: lengths of segments in intersected cells
     # The tuple (ray_indices[n], isect_indices[n], lengths[n]) stores which ray has intersected which cell with which length. n runs from 0 to the amount of ray/cell intersections (-1) of this measurement.
     intensities, ray_indices, isect_indices, lengths = tomograph.take_measurement(n_grid, n_rays, theta)
-
 
     return [L, g]
 
