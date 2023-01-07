@@ -29,9 +29,11 @@ def power_iteration(M: np.ndarray, epsilon: float = -1.0) -> (np.ndarray, list):
         raise ValueError("Matrix not nxn")
 
     # TODO: set epsilon to default value if not set by user
+    epsilon = 1e-10
 
     # TODO: normalized random vector of proper size to initialize iteration
-    vector = np.zeros(1)
+    vector = np.random.randn(M.shape[0])
+    vector = vector/np.linalg.norm(vector)
 
     # Initialize residual list and residual of current eigenvector estimate
     residuals = []
@@ -40,7 +42,11 @@ def power_iteration(M: np.ndarray, epsilon: float = -1.0) -> (np.ndarray, list):
     # Perform power iteration
     while residual > epsilon:
         # TODO: implement power iteration
-        pass
+        new_vector = np.dot(M, vector)
+        new_residual = np.linalg.norm(new_vector)
+        residual = np.linalg.norm(new_vector - new_residual * vector)
+        residuals.append(residual)
+        vector = new_vector/np.linalg.norm(new_vector)
 
     return vector, residuals
 
@@ -66,11 +72,16 @@ def load_images(path: str, file_ending: str=".png") -> (list, int, int):
 
     # TODO read each image in path as numpy.ndarray and append to images
     # Useful functions: lib.list_directory(), matplotlib.image.imread(), numpy.asarray()
+    import_list = lib.list_directory(path)
+    import_list.sort()
 
+    for i in import_list:
+        if i.endswith(file_ending):
+            actualPath = path + i
+            images.append(np.asarray(mpl.image.imread(actualPath),dtype=float))
 
     # TODO set dimensions according to first image in images
-    dimension_y = 0
-    dimension_x = 0
+    dimension_y, dimension_x = images[0].shape
 
     return images, dimension_x, dimension_y
 
@@ -87,9 +98,13 @@ def setup_data_matrix(images: list) -> np.ndarray:
     """
     # TODO: initialize data matrix with proper size and data type
     D = np.zeros((0, 0))
+    D = np.zeros((len(images), images[0].shape[0]*images[0].shape[1]))
 
     # TODO: add flattened images to data matrix
-
+    count = 0
+    for i in images:
+        D[count] = i.flatten()
+        count += 1
 
     return D
 
@@ -108,11 +123,15 @@ def calculate_pca(D: np.ndarray) -> (np.ndarray, np.ndarray, np.ndarray):
     """
 
     # TODO: subtract mean from data / center data at origin
-    mean_data = np.zeros((1, 1))
+    mean_data = np.zeros(D.shape[1])
+    mean_data = np.mean(D, axis=0)
+
+    for i in range(D.shape[1]):
+        D[:,i] -= mean_data[i]
 
     # TODO: compute left and right singular vectors and singular values
     # Useful functions: numpy.linalg.svd(..., full_matrices=False)
-    svals, pcs = [np.ones((1, 1))] * 2
+    u, svals, pcs = np.linalg.svd(D, full_matrices=False)
 
     return pcs, svals, mean_data
 
@@ -131,9 +150,14 @@ def accumulated_energy(singular_values: np.ndarray, threshold: float = 0.8) -> i
     """
 
     # TODO: Normalize singular value magnitudes
+    singular_values = singular_values/np.sum(singular_values)
 
     k = 0
     # TODO: Determine k that first k singular values make up threshold percent of magnitude
+    temp = 0
+    while temp < threshold:
+        temp += singular_values[k]
+        k += 1
 
     return k
 
@@ -152,10 +176,15 @@ def project_faces(pcs: np.ndarray, images: list, mean_data: np.ndarray) -> np.nd
     """
 
     # TODO: initialize coefficients array with proper size
-    coefficients = np.zeros((1, 1))
+    coefficients = np.zeros((len(images), pcs.shape[0]))
+
+    D = setup_data_matrix(images)
+    for i in range(D.shape[1]):
+        D[:,i] -= mean_data[i]
 
     # TODO: iterate over images and project each normalized image into principal component basis
-
+    for i in range(coefficients.shape[0]):
+        coefficients[i] = np.dot(pcs, D[i])
 
     return coefficients
 
@@ -179,15 +208,30 @@ np.ndarray, list, np.ndarray):
     """
 
     # TODO: load test data set
-    imgs_test = []
+    #imgs_test = []
+    imgs_test, x, y = load_images(path_test)
 
     # TODO: project test data set into eigenbasis
-    coeffs_test = np.zeros(coeffs_train.shape)
-
+    #coeffs_test = np.zeros(coeffs_train.shape)
+    coeffs_test = project_faces(pcs, imgs_test, mean_data)
 
     # TODO: Initialize scores matrix with proper size
-    scores = np.zeros((1, 1))
+    len_coeffstest = len(coeffs_test)
+    len_coeffstrain = len(coeffs_train)
+    #scores = np.zeros((1, 1))
+    scores = np.zeros((len_coeffstrain, len_coeffstest))
     # TODO: Iterate over all images and calculate pairwise correlation
+    for i in range(len_coeffstest):
+        for j in range(len_coeffstrain):
+            # alpha = arccos( a^T*b / ||a||*||b|| )
+            # a = coeffs_test[i]
+            # b = coeffs_train[j]
+            a_transpose = np.transpose(coeffs_test[i])
+            zaehler = np.dot(a_transpose, coeffs_train[j])
+            a_norm = np.linalg.norm(coeffs_test[i])
+            b_norm = np.linalg.norm(coeffs_train[j])
+            nenner = a_norm*b_norm
+            scores[j][i] = np.arccos(zaehler/nenner)
 
 
     return scores, imgs_test, coeffs_test
