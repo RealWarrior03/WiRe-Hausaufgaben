@@ -66,6 +66,8 @@ class Tests(unittest.TestCase):
         self.assertTrue(len(spline) == 7)
         for i, pol in enumerate(spline):
             coeffs = pad_coefficients(pol, 4)
+            #print(coeffs)
+            #print(Tests.data["t2_spline"][i])
             self.assertTrue(np.allclose(coeffs, Tests.data["t2_spline"][i]))
         plot_spline([x, y], spline)
 
