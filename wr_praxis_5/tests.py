@@ -71,6 +71,10 @@ class Tests(unittest.TestCase):
 
 #        np.savez("data4", t4_d1=d1, t4_d2=d2)
 
+    def test_5_fft_own(self):
+        data = [0.5, 0.25, 0, 0.25, 0.5, 0.25, 0, 0.25]
+        print(fft(data))
+
     def test_5_fft(self):
         data = np.random.randn(128)
         data1 = ifft(fft(data))
