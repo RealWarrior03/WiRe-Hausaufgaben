@@ -73,7 +73,9 @@ class Tests(unittest.TestCase):
 
     def test_5_fft_own(self):
         data = [0.5, 0.25, 0, 0.25, 0.5, 0.25, 0, 0.25]
-        print(fft(data))
+        data_1_3_1 = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+        data_1_3_2 = [0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25, 0.25]
+        print(fft(data_1_3_1))
 
     def test_5_fft(self):
         data = np.random.randn(128)
